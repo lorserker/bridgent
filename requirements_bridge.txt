@@ -1,0 +1,2 @@
+colorama==0.3.9
+redeal==0.2.0
