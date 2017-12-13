@@ -116,8 +116,3 @@ with tf.Session() as sess:
         print(acc012(y_batch_c, pred_train))
         print(acc012(y_batch_v, pred_val))
         sys.stdout.flush()
-            
-        
-
-
-
