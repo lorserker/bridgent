@@ -5,6 +5,8 @@ import tensorflow as tf
 from batcher import Batcher
 from metrics import acc012
 
+from tqdm import tqdm
+
 seed = 1337
 
 np.random.seed(seed)
@@ -88,9 +90,38 @@ fc_a = tf.nn.dropout(
     keep_prob,
     seed=seed)
 
+fc_w_2 = tf.get_variable('fcw2', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_2 = tf.matmul(fc_a, fc_w_2)
+fc_z_2_mean, fc_z_2_var = tf.nn.moments(fc_z_2, axes=[0], keep_dims=False)
+fc_z_2_scale = tf.Variable(tf.ones(fc_z_2_mean.shape))
+fc_z_2_offset = tf.Variable(tf.zeros(fc_z_2_mean.shape))
+fc_a_2 = tf.nn.dropout(
+    tf.nn.relu(tf.nn.batch_normalization(fc_z_2, fc_z_2_mean, fc_z_2_var, fc_z_2_offset, fc_z_2_scale, bn_epsilon)), keep_prob, seed=seed)
+
+fc_w_3 = tf.get_variable('fcw3', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_3 = tf.matmul(fc_a_2, fc_w_3)
+fc_z_3_mean, fc_z_3_var = tf.nn.moments(fc_z_3, axes=[0], keep_dims=False)
+fc_z_3_scale = tf.Variable(tf.ones(fc_z_3_mean.shape))
+fc_z_3_offset = tf.Variable(tf.zeros(fc_z_3_mean.shape))
+fc_a_3 = tf.nn.dropout(
+    tf.nn.relu(tf.nn.batch_normalization(fc_z_3, fc_z_3_mean, fc_z_3_var, fc_z_3_offset, fc_z_3_scale, bn_epsilon)), keep_prob, seed=seed)
+
+fc_w_4 = tf.get_variable('fcw4', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_4 = tf.matmul(fc_a_3, fc_w_4)
+fc_z_4_mean, fc_z_4_var = tf.nn.moments(fc_z_4, axes=[0], keep_dims=False)
+fc_z_4_scale = tf.Variable(tf.ones(fc_z_4_mean.shape))
+fc_z_4_offset = tf.Variable(tf.zeros(fc_z_4_mean.shape))
+fc_a_4 = tf.nn.dropout(
+    tf.nn.relu(
+        tf.add(
+            tf.nn.batch_normalization(fc_z_4, fc_z_4_mean, fc_z_4_var, fc_z_4_offset, fc_z_4_scale, bn_epsilon),
+            fc_a
+        )
+    ), keep_prob, seed=seed)
+
 w_out = tf.get_variable('w_out', shape=[n_hidden_units, 1], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 b_out = tf.Variable(np.zeros((1, 1)), dtype=tf.float32)
-pred = tf.add(tf.matmul(fc_a, w_out), b_out)
+pred = tf.add(tf.matmul(fc_a_4, w_out), b_out)
 
 # define cost
 
@@ -113,7 +144,7 @@ with tf.Session() as sess:
     sess.run(init)
     
     for iteration in range(n_iterations // display_step):
-        for i in range(display_step):
+        for i in tqdm(range(display_step)):
             x_batch, y_batch = batch.next_batch([X_train, y_train])
             train_step.run(feed_dict={X:x_batch, Y:y_batch, keep_prob:0.7})
         
