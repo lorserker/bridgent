@@ -33,6 +33,10 @@ n_hidden_units = 128
 
 bn_epsilon = 1e-5
 
+l2_reg = 0.1
+
+dropout_keep = 0.7
+
 # set up neural network
 
 X = tf.placeholder(tf.float32, shape=[None, n_h, n_w, n_c])
@@ -85,48 +89,43 @@ fc_z = tf.matmul(fc_in, fc_w)
 fc_z_mean, fc_z_var = tf.nn.moments(fc_z, axes=[0], keep_dims=False)
 fc_z_scale = tf.Variable(tf.ones(fc_z_mean.shape))
 fc_z_offset = tf.Variable(tf.zeros(fc_z_mean.shape))
-fc_a = tf.nn.dropout(
-    tf.nn.relu(tf.nn.batch_normalization(fc_z, fc_z_mean, fc_z_var, fc_z_offset, fc_z_scale, bn_epsilon)),
-    keep_prob,
-    seed=seed)
+fc_a = tf.nn.relu(tf.nn.batch_normalization(fc_z, fc_z_mean, fc_z_var, fc_z_offset, fc_z_scale, bn_epsilon))
 
 fc_w_2 = tf.get_variable('fcw2', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_2 = tf.matmul(fc_a, fc_w_2)
 fc_z_2_mean, fc_z_2_var = tf.nn.moments(fc_z_2, axes=[0], keep_dims=False)
 fc_z_2_scale = tf.Variable(tf.ones(fc_z_2_mean.shape))
 fc_z_2_offset = tf.Variable(tf.zeros(fc_z_2_mean.shape))
-fc_a_2 = tf.nn.dropout(
-    tf.nn.relu(tf.nn.batch_normalization(fc_z_2, fc_z_2_mean, fc_z_2_var, fc_z_2_offset, fc_z_2_scale, bn_epsilon)), keep_prob, seed=seed)
+fc_a_2 = tf.nn.relu(tf.nn.batch_normalization(fc_z_2, fc_z_2_mean, fc_z_2_var, fc_z_2_offset, fc_z_2_scale, bn_epsilon))
 
 fc_w_3 = tf.get_variable('fcw3', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_3 = tf.matmul(fc_a_2, fc_w_3)
 fc_z_3_mean, fc_z_3_var = tf.nn.moments(fc_z_3, axes=[0], keep_dims=False)
 fc_z_3_scale = tf.Variable(tf.ones(fc_z_3_mean.shape))
 fc_z_3_offset = tf.Variable(tf.zeros(fc_z_3_mean.shape))
-fc_a_3 = tf.nn.dropout(
-    tf.nn.relu(tf.nn.batch_normalization(fc_z_3, fc_z_3_mean, fc_z_3_var, fc_z_3_offset, fc_z_3_scale, bn_epsilon)), keep_prob, seed=seed)
+fc_a_3 = tf.nn.relu(tf.nn.batch_normalization(fc_z_3, fc_z_3_mean, fc_z_3_var, fc_z_3_offset, fc_z_3_scale, bn_epsilon))
 
 fc_w_4 = tf.get_variable('fcw4', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_4 = tf.matmul(fc_a_3, fc_w_4)
 fc_z_4_mean, fc_z_4_var = tf.nn.moments(fc_z_4, axes=[0], keep_dims=False)
 fc_z_4_scale = tf.Variable(tf.ones(fc_z_4_mean.shape))
 fc_z_4_offset = tf.Variable(tf.zeros(fc_z_4_mean.shape))
-fc_a_4 = tf.nn.dropout(
-    tf.nn.relu(
-        tf.add(
-            tf.nn.batch_normalization(fc_z_4, fc_z_4_mean, fc_z_4_var, fc_z_4_offset, fc_z_4_scale, bn_epsilon),
-            fc_a
-        )
-    ), keep_prob, seed=seed)
+fc_a_4 = tf.nn.relu(
+    tf.add(
+        tf.nn.batch_normalization(fc_z_4, fc_z_4_mean, fc_z_4_var, fc_z_4_offset, fc_z_4_scale, bn_epsilon),
+        fc_a
+    )
+)
 
 w_out = tf.get_variable('w_out', shape=[n_hidden_units, 1], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 b_out = tf.Variable(np.zeros((1, 1)), dtype=tf.float32)
 pred = tf.add(tf.matmul(fc_a_4, w_out), b_out)
 
 # define cost
-
+weights = [conv1_w, conv2_w, conv3_w, conv4_w, conv_s_w, fc_w_2, fc_w_3, fc_w_4, w_out]
+cost_reg = (1.0 / (2*batch_size)) * sum([tf.reduce_sum(tf.square(w)) for w in weights])
 cost_pred = tf.reduce_mean(tf.squared_difference(pred, Y))
-cost = cost_pred
+cost = cost_pred + cost_reg
 
 # optimizer
 
@@ -146,15 +145,16 @@ with tf.Session() as sess:
     for iteration in range(n_iterations // display_step):
         for i in tqdm(range(display_step)):
             x_batch, y_batch = batch.next_batch([X_train, y_train])
-            train_step.run(feed_dict={X:x_batch, Y:y_batch, keep_prob:0.7})
+            train_step.run(feed_dict={X:x_batch, Y:y_batch, keep_prob:dropout_keep})
         
         sys.stdout.write('*')
         x_batch_c, y_batch_c = cost_train_batch.next_batch([X_train, y_train])
         x_batch_v, y_batch_v = cost_val_batch.next_batch([X_val, y_val])
         c = sess.run(cost, feed_dict={X: x_batch_c, Y: y_batch_c, keep_prob: 1.0})
+        creg = sess.run(cost_reg, feed_dict={X: x_batch_c, Y: y_batch_c, keep_prob: 1.0})
         pred_train = sess.run(pred, feed_dict={X: x_batch_c, Y: y_batch_c, keep_prob: 1.0})
         pred_val = sess.run(pred, feed_dict={X: x_batch_v, Y: y_batch_v, keep_prob: 1.0})
-        print('it={} cost={}'.format(iteration*display_step, c))
+        print('it={} cost={} creg={}'.format(iteration*display_step, c, creg))
         print(acc012(y_batch_c, pred_train))
         print(acc012(y_batch_v, pred_val))
         sys.stdout.flush()
