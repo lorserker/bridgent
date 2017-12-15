@@ -91,6 +91,8 @@ fc_z_scale = tf.Variable(tf.ones(fc_z_mean.shape))
 fc_z_offset = tf.Variable(tf.zeros(fc_z_mean.shape))
 fc_a = tf.nn.relu(tf.nn.batch_normalization(fc_z, fc_z_mean, fc_z_var, fc_z_offset, fc_z_scale, bn_epsilon))
 
+# Res Block 1
+
 fc_w_2 = tf.get_variable('fcw2', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_2 = tf.matmul(fc_a, fc_w_2)
 fc_z_2_mean, fc_z_2_var = tf.nn.moments(fc_z_2, axes=[0], keep_dims=False)
@@ -117,12 +119,98 @@ fc_a_4 = tf.nn.relu(
     )
 )
 
+# Res Block 2
+
+fc_w_5 = tf.get_variable('fcw5', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_5 = tf.matmul(fc_a_4, fc_w_5)
+fc_z_5_mean, fc_z_5_var = tf.nn.moments(fc_z_5, axes=[0], keep_dims=False)
+fc_z_5_scale = tf.Variable(tf.ones(fc_z_5_mean.shape))
+fc_z_5_offset = tf.Variable(tf.zeros(fc_z_5_mean.shape))
+fc_a_5 = tf.nn.relu(tf.nn.batch_normalization(fc_z_5, fc_z_5_mean, fc_z_5_var, fc_z_5_offset, fc_z_5_scale, bn_epsilon))
+
+fc_w_6 = tf.get_variable('fcw6', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_6 = tf.matmul(fc_a_5, fc_w_6)
+fc_z_6_mean, fc_z_6_var = tf.nn.moments(fc_z_6, axes=[0], keep_dims=False)
+fc_z_6_scale = tf.Variable(tf.ones(fc_z_6_mean.shape))
+fc_z_6_offset = tf.Variable(tf.zeros(fc_z_6_mean.shape))
+fc_a_6 = tf.nn.relu(tf.nn.batch_normalization(fc_z_6, fc_z_6_mean, fc_z_6_var, fc_z_6_offset, fc_z_6_scale, bn_epsilon))
+
+fc_w_7 = tf.get_variable('fcw7', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_7 = tf.matmul(fc_a_6, fc_w_7)
+fc_z_7_mean, fc_z_7_var = tf.nn.moments(fc_z_7, axes=[0], keep_dims=False)
+fc_z_7_scale = tf.Variable(tf.ones(fc_z_7_mean.shape))
+fc_z_7_offset = tf.Variable(tf.zeros(fc_z_7_mean.shape))
+fc_a_7 = tf.nn.relu(
+    tf.add(
+        tf.nn.batch_normalization(fc_z_7, fc_z_7_mean, fc_z_7_var, fc_z_7_offset, fc_z_7_scale, bn_epsilon),
+        fc_a_4
+    )
+)
+
+# Res Block 3
+
+fc_w_8 = tf.get_variable('fcw8', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_8 = tf.matmul(fc_a_7, fc_w_8)
+fc_z_8_mean, fc_z_8_var = tf.nn.moments(fc_z_8, axes=[0], keep_dims=False)
+fc_z_8_scale = tf.Variable(tf.ones(fc_z_8_mean.shape))
+fc_z_8_offset = tf.Variable(tf.zeros(fc_z_8_mean.shape))
+fc_a_8 = tf.nn.relu(tf.nn.batch_normalization(fc_z_8, fc_z_8_mean, fc_z_8_var, fc_z_8_offset, fc_z_8_scale, bn_epsilon))
+
+fc_w_9 = tf.get_variable('fcw9', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_9 = tf.matmul(fc_a_8, fc_w_9)
+fc_z_9_mean, fc_z_9_var = tf.nn.moments(fc_z_9, axes=[0], keep_dims=False)
+fc_z_9_scale = tf.Variable(tf.ones(fc_z_9_mean.shape))
+fc_z_9_offset = tf.Variable(tf.zeros(fc_z_9_mean.shape))
+fc_a_9 = tf.nn.relu(tf.nn.batch_normalization(fc_z_9, fc_z_9_mean, fc_z_9_var, fc_z_9_offset, fc_z_9_scale, bn_epsilon))
+
+fc_w_10 = tf.get_variable('fcw10', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_10 = tf.matmul(fc_a_9, fc_w_10)
+fc_z_10_mean, fc_z_10_var = tf.nn.moments(fc_z_10, axes=[0], keep_dims=False)
+fc_z_10_scale = tf.Variable(tf.ones(fc_z_10_mean.shape))
+fc_z_10_offset = tf.Variable(tf.zeros(fc_z_10_mean.shape))
+fc_a_10 = tf.nn.relu(
+    tf.add(
+        tf.nn.batch_normalization(fc_z_10, fc_z_10_mean, fc_z_10_var, fc_z_10_offset, fc_z_10_scale, bn_epsilon),
+        fc_a_7
+    )
+)
+
+# Res Block 4
+
+fc_w_11 = tf.get_variable('fcw11', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_11 = tf.matmul(fc_a_10, fc_w_11)
+fc_z_11_mean, fc_z_11_var = tf.nn.moments(fc_z_11, axes=[0], keep_dims=False)
+fc_z_11_scale = tf.Variable(tf.ones(fc_z_11_mean.shape))
+fc_z_11_offset = tf.Variable(tf.zeros(fc_z_11_mean.shape))
+fc_a_11 = tf.nn.relu(tf.nn.batch_normalization(fc_z_11, fc_z_11_mean, fc_z_11_var, fc_z_11_offset, fc_z_11_scale, bn_epsilon))
+
+fc_w_12 = tf.get_variable('fcw12', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_12 = tf.matmul(fc_a_11, fc_w_12)
+fc_z_12_mean, fc_z_12_var = tf.nn.moments(fc_z_12, axes=[0], keep_dims=False)
+fc_z_12_scale = tf.Variable(tf.ones(fc_z_12_mean.shape))
+fc_z_12_offset = tf.Variable(tf.zeros(fc_z_12_mean.shape))
+fc_a_12 = tf.nn.relu(tf.nn.batch_normalization(fc_z_12, fc_z_12_mean, fc_z_12_var, fc_z_12_offset, fc_z_12_scale, bn_epsilon))
+
+fc_w_13 = tf.get_variable('fcw13', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
+fc_z_13 = tf.matmul(fc_a_12, fc_w_13)
+fc_z_13_mean, fc_z_13_var = tf.nn.moments(fc_z_13, axes=[0], keep_dims=False)
+fc_z_13_scale = tf.Variable(tf.ones(fc_z_13_mean.shape))
+fc_z_13_offset = tf.Variable(tf.zeros(fc_z_13_mean.shape))
+fc_a_13 = tf.nn.relu(
+    tf.add(
+        tf.nn.batch_normalization(fc_z_13, fc_z_13_mean, fc_z_13_var, fc_z_13_offset, fc_z_13_scale, bn_epsilon),
+        fc_a_10
+    )
+)
+
+# Output Layer
+
 w_out = tf.get_variable('w_out', shape=[n_hidden_units, 1], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 b_out = tf.Variable(np.zeros((1, 1)), dtype=tf.float32)
-pred = tf.add(tf.matmul(fc_a_4, w_out), b_out)
+pred = tf.add(tf.matmul(fc_a_13, w_out), b_out)
 
 # define cost
-weights = [conv1_w, conv2_w, conv3_w, conv4_w, conv_s_w, fc_w_2, fc_w_3, fc_w_4, w_out]
+weights = [conv1_w, conv2_w, conv3_w, conv4_w, conv_s_w, fc_w_2, fc_w_3, fc_w_4, fc_w_5, fc_w_6, fc_w_7, fc_w_8, fc_w_9, fc_w_10, fc_w_11, fc_w_12, fc_w_13, w_out]
 cost_reg = (1.0 / (2*batch_size)) * sum([tf.reduce_sum(tf.square(w)) for w in weights])
 cost_pred = tf.reduce_mean(tf.squared_difference(pred, Y))
 cost = cost_pred + l2_reg * cost_reg
