@@ -242,7 +242,7 @@ with tf.Session() as sess:
         creg = sess.run(cost_reg, feed_dict={X: x_batch_c, Y: y_batch_c, keep_prob: 1.0})
         pred_train = sess.run(pred, feed_dict={X: x_batch_c, Y: y_batch_c, keep_prob: 1.0})
         pred_val = sess.run(pred, feed_dict={X: x_batch_v, Y: y_batch_v, keep_prob: 1.0})
-        print('it={} cost={} creg={}'.format(iteration*display_step, c, creg))
+        print('it={} cost={} creg={}'.format(iteration*display_step, c, l2_reg*creg))
         print(acc012(y_batch_c, pred_train))
         print(acc012(y_batch_v, pred_val))
         sys.stdout.flush()
