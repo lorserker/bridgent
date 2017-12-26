@@ -25,7 +25,7 @@ n_c = X_train.shape[3]
 
 batch_size = 64
 n_iterations = 1000000
-display_step = 1000
+display_step = 10000
 
 learning_rate = 0.001
 
@@ -39,45 +39,45 @@ dropout_keep = float(sys.argv[1])
 
 # set up neural network
 
-X = tf.placeholder(tf.float32, shape=[None, n_h, n_w, n_c])
-Y = tf.placeholder(tf.float32, shape=[None, 1])
+X = tf.placeholder(tf.float32, shape=[None, n_h, n_w, n_c], name='X')
+Y = tf.placeholder(tf.float32, shape=[None, 1], name='Y')
 
-keep_prob = tf.placeholder(tf.float32)
+keep_prob = tf.placeholder(tf.float32, name='keep_prob')
 
 conv1_w = tf.get_variable('c1w', shape=[1, 4, 4, 32], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 conv1_z = tf.nn.conv2d(X, filter=conv1_w, strides=[1,1,1,1], padding='SAME')
 conv1_z_mean, conv1_z_var = tf.nn.moments(conv1_z, axes=[0,1,2], keep_dims=False)
 conv1_scale = tf.Variable(tf.ones(conv1_z_mean.shape))
 conv1_offset = tf.Variable(tf.zeros(conv1_z_mean.shape))
-conv1_a = tf.nn.relu(tf.nn.batch_normalization(conv1_z, conv1_z_mean, conv1_z_var, conv1_offset, conv1_scale, bn_epsilon))
+conv1_a = tf.nn.relu(tf.nn.batch_normalization(conv1_z, conv1_z_mean, conv1_z_var, conv1_offset, conv1_scale, bn_epsilon), name='conv1_a')
 
 conv2_w = tf.get_variable('c2w', shape=[1, 4, 32, 64], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 conv2_z = tf.nn.conv2d(conv1_a, filter=conv2_w, strides=[1,1,1,1], padding='SAME')
 conv2_z_mean, conv2_z_var = tf.nn.moments(conv2_z, axes=[0,1,2], keep_dims=False)
 conv2_scale = tf.Variable(tf.ones(conv2_z_mean.shape))
 conv2_offset = tf.Variable(tf.zeros(conv2_z_mean.shape))
-conv2_a = tf.nn.relu(tf.nn.batch_normalization(conv2_z, conv2_z_mean, conv2_z_var, conv2_offset, conv2_scale, bn_epsilon))
+conv2_a = tf.nn.relu(tf.nn.batch_normalization(conv2_z, conv2_z_mean, conv2_z_var, conv2_offset, conv2_scale, bn_epsilon), name='conv2_a')
 
 conv3_w = tf.get_variable('c3w', shape=[1, 4, 64, 128], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 conv3_z = tf.nn.conv2d(conv2_a, filter=conv3_w, strides=[1,1,1,1], padding='SAME')
 conv3_z_mean, conv3_z_var = tf.nn.moments(conv3_z, axes=[0,1,2], keep_dims=False)
 conv3_scale = tf.Variable(tf.ones(conv3_z_mean.shape))
 conv3_offset = tf.Variable(tf.zeros(conv3_z_mean.shape))
-conv3_a = tf.nn.relu(tf.nn.batch_normalization(conv3_z, conv3_z_mean, conv3_z_var, conv3_offset, conv3_scale, bn_epsilon))
+conv3_a = tf.nn.relu(tf.nn.batch_normalization(conv3_z, conv3_z_mean, conv3_z_var, conv3_offset, conv3_scale, bn_epsilon), name='conv3_a')
 
 conv4_w = tf.get_variable('c4w', shape=[4, 4, 128, 512], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 conv4_z = tf.nn.conv2d(conv3_a, filter=conv4_w, strides=[1,1,1,1], padding='VALID')
 conv4_z_mean, conv4_z_var = tf.nn.moments(conv4_z, axes=[0,1,2], keep_dims=False)
 conv4_scale = tf.Variable(tf.ones(conv4_z_mean.shape))
 conv4_offset = tf.Variable(tf.zeros(conv4_z_mean.shape))
-conv4_a = tf.nn.relu(tf.nn.batch_normalization(conv4_z, conv4_z_mean, conv4_z_var, conv4_offset, conv4_scale, bn_epsilon))
+conv4_a = tf.nn.relu(tf.nn.batch_normalization(conv4_z, conv4_z_mean, conv4_z_var, conv4_offset, conv4_scale, bn_epsilon), name='conv4_a')
 
 conv_s_w = tf.get_variable('csw', shape=[1, 13, 4, 32], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 conv_s_z = tf.nn.conv2d(X, filter=conv_s_w, strides=[1,1,1,1], padding='VALID')
 conv_s_z_mean, conv_s_z_var = tf.nn.moments(conv_s_z, axes=[0,1,2], keep_dims=False)
 conv_s_scale = tf.Variable(tf.ones(conv_s_z_mean.shape))
 conv_s_offset = tf.Variable(tf.zeros(conv_s_z_mean.shape))
-conv_s_a = tf.nn.relu(tf.nn.batch_normalization(conv_s_z, conv_s_z_mean, conv_s_z_var, conv_s_offset, conv_s_scale, bn_epsilon))
+conv_s_a = tf.nn.relu(tf.nn.batch_normalization(conv_s_z, conv_s_z_mean, conv_s_z_var, conv_s_offset, conv_s_scale, bn_epsilon), name='conv_s_a')
 
 fc_in = tf.nn.dropout(
     tf.concat([tf.contrib.layers.flatten(conv4_a), tf.contrib.layers.flatten(conv_s_a)], axis=1, name='fc_in'), 
@@ -89,7 +89,7 @@ fc_z = tf.matmul(fc_in, fc_w)
 fc_z_mean, fc_z_var = tf.nn.moments(fc_z, axes=[0], keep_dims=False)
 fc_z_scale = tf.Variable(tf.ones(fc_z_mean.shape))
 fc_z_offset = tf.Variable(tf.zeros(fc_z_mean.shape))
-fc_a = tf.nn.relu(tf.nn.batch_normalization(fc_z, fc_z_mean, fc_z_var, fc_z_offset, fc_z_scale, bn_epsilon))
+fc_a = tf.nn.relu(tf.nn.batch_normalization(fc_z, fc_z_mean, fc_z_var, fc_z_offset, fc_z_scale, bn_epsilon), name='fc_a')
 
 # Res Block 1
 
@@ -98,14 +98,14 @@ fc_z_2 = tf.matmul(fc_a, fc_w_2)
 fc_z_2_mean, fc_z_2_var = tf.nn.moments(fc_z_2, axes=[0], keep_dims=False)
 fc_z_2_scale = tf.Variable(tf.ones(fc_z_2_mean.shape))
 fc_z_2_offset = tf.Variable(tf.zeros(fc_z_2_mean.shape))
-fc_a_2 = tf.nn.relu(tf.nn.batch_normalization(fc_z_2, fc_z_2_mean, fc_z_2_var, fc_z_2_offset, fc_z_2_scale, bn_epsilon))
+fc_a_2 = tf.nn.relu(tf.nn.batch_normalization(fc_z_2, fc_z_2_mean, fc_z_2_var, fc_z_2_offset, fc_z_2_scale, bn_epsilon), name='fc_a_2')
 
 fc_w_3 = tf.get_variable('fcw3', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_3 = tf.matmul(fc_a_2, fc_w_3)
 fc_z_3_mean, fc_z_3_var = tf.nn.moments(fc_z_3, axes=[0], keep_dims=False)
 fc_z_3_scale = tf.Variable(tf.ones(fc_z_3_mean.shape))
 fc_z_3_offset = tf.Variable(tf.zeros(fc_z_3_mean.shape))
-fc_a_3 = tf.nn.relu(tf.nn.batch_normalization(fc_z_3, fc_z_3_mean, fc_z_3_var, fc_z_3_offset, fc_z_3_scale, bn_epsilon))
+fc_a_3 = tf.nn.relu(tf.nn.batch_normalization(fc_z_3, fc_z_3_mean, fc_z_3_var, fc_z_3_offset, fc_z_3_scale, bn_epsilon), name='fc_a_3')
 
 fc_w_4 = tf.get_variable('fcw4', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_4 = tf.matmul(fc_a_3, fc_w_4)
@@ -116,7 +116,8 @@ fc_a_4 = tf.nn.relu(
     tf.add(
         tf.nn.batch_normalization(fc_z_4, fc_z_4_mean, fc_z_4_var, fc_z_4_offset, fc_z_4_scale, bn_epsilon),
         fc_a
-    )
+    ),
+    name='fc_a_4'
 )
 
 # Res Block 2
@@ -126,14 +127,14 @@ fc_z_5 = tf.matmul(fc_a_4, fc_w_5)
 fc_z_5_mean, fc_z_5_var = tf.nn.moments(fc_z_5, axes=[0], keep_dims=False)
 fc_z_5_scale = tf.Variable(tf.ones(fc_z_5_mean.shape))
 fc_z_5_offset = tf.Variable(tf.zeros(fc_z_5_mean.shape))
-fc_a_5 = tf.nn.relu(tf.nn.batch_normalization(fc_z_5, fc_z_5_mean, fc_z_5_var, fc_z_5_offset, fc_z_5_scale, bn_epsilon))
+fc_a_5 = tf.nn.relu(tf.nn.batch_normalization(fc_z_5, fc_z_5_mean, fc_z_5_var, fc_z_5_offset, fc_z_5_scale, bn_epsilon), name='fc_a_5')
 
 fc_w_6 = tf.get_variable('fcw6', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_6 = tf.matmul(fc_a_5, fc_w_6)
 fc_z_6_mean, fc_z_6_var = tf.nn.moments(fc_z_6, axes=[0], keep_dims=False)
 fc_z_6_scale = tf.Variable(tf.ones(fc_z_6_mean.shape))
 fc_z_6_offset = tf.Variable(tf.zeros(fc_z_6_mean.shape))
-fc_a_6 = tf.nn.relu(tf.nn.batch_normalization(fc_z_6, fc_z_6_mean, fc_z_6_var, fc_z_6_offset, fc_z_6_scale, bn_epsilon))
+fc_a_6 = tf.nn.relu(tf.nn.batch_normalization(fc_z_6, fc_z_6_mean, fc_z_6_var, fc_z_6_offset, fc_z_6_scale, bn_epsilon), name='fc_a_6')
 
 fc_w_7 = tf.get_variable('fcw7', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_7 = tf.matmul(fc_a_6, fc_w_7)
@@ -144,7 +145,8 @@ fc_a_7 = tf.nn.relu(
     tf.add(
         tf.nn.batch_normalization(fc_z_7, fc_z_7_mean, fc_z_7_var, fc_z_7_offset, fc_z_7_scale, bn_epsilon),
         fc_a_4
-    )
+    ),
+    name='fc_a_7'
 )
 
 # Res Block 3
@@ -154,14 +156,14 @@ fc_z_8 = tf.matmul(fc_a_7, fc_w_8)
 fc_z_8_mean, fc_z_8_var = tf.nn.moments(fc_z_8, axes=[0], keep_dims=False)
 fc_z_8_scale = tf.Variable(tf.ones(fc_z_8_mean.shape))
 fc_z_8_offset = tf.Variable(tf.zeros(fc_z_8_mean.shape))
-fc_a_8 = tf.nn.relu(tf.nn.batch_normalization(fc_z_8, fc_z_8_mean, fc_z_8_var, fc_z_8_offset, fc_z_8_scale, bn_epsilon))
+fc_a_8 = tf.nn.relu(tf.nn.batch_normalization(fc_z_8, fc_z_8_mean, fc_z_8_var, fc_z_8_offset, fc_z_8_scale, bn_epsilon), name='fc_a_8')
 
 fc_w_9 = tf.get_variable('fcw9', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_9 = tf.matmul(fc_a_8, fc_w_9)
 fc_z_9_mean, fc_z_9_var = tf.nn.moments(fc_z_9, axes=[0], keep_dims=False)
 fc_z_9_scale = tf.Variable(tf.ones(fc_z_9_mean.shape))
 fc_z_9_offset = tf.Variable(tf.zeros(fc_z_9_mean.shape))
-fc_a_9 = tf.nn.relu(tf.nn.batch_normalization(fc_z_9, fc_z_9_mean, fc_z_9_var, fc_z_9_offset, fc_z_9_scale, bn_epsilon))
+fc_a_9 = tf.nn.relu(tf.nn.batch_normalization(fc_z_9, fc_z_9_mean, fc_z_9_var, fc_z_9_offset, fc_z_9_scale, bn_epsilon), name='fc_a_9')
 
 fc_w_10 = tf.get_variable('fcw10', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_10 = tf.matmul(fc_a_9, fc_w_10)
@@ -172,7 +174,8 @@ fc_a_10 = tf.nn.relu(
     tf.add(
         tf.nn.batch_normalization(fc_z_10, fc_z_10_mean, fc_z_10_var, fc_z_10_offset, fc_z_10_scale, bn_epsilon),
         fc_a_7
-    )
+    ),
+    name='fc_a_10'
 )
 
 # Res Block 4
@@ -182,14 +185,14 @@ fc_z_11 = tf.matmul(fc_a_10, fc_w_11)
 fc_z_11_mean, fc_z_11_var = tf.nn.moments(fc_z_11, axes=[0], keep_dims=False)
 fc_z_11_scale = tf.Variable(tf.ones(fc_z_11_mean.shape))
 fc_z_11_offset = tf.Variable(tf.zeros(fc_z_11_mean.shape))
-fc_a_11 = tf.nn.relu(tf.nn.batch_normalization(fc_z_11, fc_z_11_mean, fc_z_11_var, fc_z_11_offset, fc_z_11_scale, bn_epsilon))
+fc_a_11 = tf.nn.relu(tf.nn.batch_normalization(fc_z_11, fc_z_11_mean, fc_z_11_var, fc_z_11_offset, fc_z_11_scale, bn_epsilon), name='fc_a_11')
 
 fc_w_12 = tf.get_variable('fcw12', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_12 = tf.matmul(fc_a_11, fc_w_12)
 fc_z_12_mean, fc_z_12_var = tf.nn.moments(fc_z_12, axes=[0], keep_dims=False)
 fc_z_12_scale = tf.Variable(tf.ones(fc_z_12_mean.shape))
 fc_z_12_offset = tf.Variable(tf.zeros(fc_z_12_mean.shape))
-fc_a_12 = tf.nn.relu(tf.nn.batch_normalization(fc_z_12, fc_z_12_mean, fc_z_12_var, fc_z_12_offset, fc_z_12_scale, bn_epsilon))
+fc_a_12 = tf.nn.relu(tf.nn.batch_normalization(fc_z_12, fc_z_12_mean, fc_z_12_var, fc_z_12_offset, fc_z_12_scale, bn_epsilon), name='fc_a_12')
 
 fc_w_13 = tf.get_variable('fcw13', shape=[n_hidden_units, n_hidden_units], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 fc_z_13 = tf.matmul(fc_a_12, fc_w_13)
@@ -200,14 +203,15 @@ fc_a_13 = tf.nn.relu(
     tf.add(
         tf.nn.batch_normalization(fc_z_13, fc_z_13_mean, fc_z_13_var, fc_z_13_offset, fc_z_13_scale, bn_epsilon),
         fc_a_10
-    )
+    ),
+    name='fc_a_13'
 )
 
 # Output Layer
 
 w_out = tf.get_variable('w_out', shape=[n_hidden_units, 1], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer(seed=seed))
 b_out = tf.Variable(np.zeros((1, 1)), dtype=tf.float32)
-pred = tf.add(tf.matmul(fc_a_13, w_out), b_out)
+pred = tf.add(tf.matmul(fc_a_13, w_out), b_out, name='pred')
 
 # define cost
 weights = [conv1_w, conv2_w, conv3_w, conv4_w, conv_s_w, fc_w_2, fc_w_3, fc_w_4, fc_w_5, fc_w_6, fc_w_7, fc_w_8, fc_w_9, fc_w_10, fc_w_11, fc_w_12, fc_w_13, w_out]
@@ -227,13 +231,19 @@ cost_val_batch = Batcher(100000, 10000)
 
 # run the session
 
+model_path = sys.argv[3]
+
 with tf.Session() as sess:
     sess.run(init)
+
+    saver = tf.train.Saver(max_to_keep=100)
     
     for iteration in range(n_iterations // display_step):
         for i in range(display_step):
             x_batch, y_batch = batch.next_batch([X_train, y_train])
             train_step.run(feed_dict={X:x_batch, Y:y_batch, keep_prob:dropout_keep})
+
+        saver.save(sess, model_path, global_step=iteration*display_step)
         
         sys.stdout.write('*')
         x_batch_c, y_batch_c = cost_train_batch.next_batch([X_train, y_train])
@@ -246,3 +256,5 @@ with tf.Session() as sess:
         print(acc012(y_batch_c, pred_train))
         print(acc012(y_batch_v, pred_val))
         sys.stdout.flush()
+
+    saver.save(sess, model_path, global_step=iteration*display_step)
